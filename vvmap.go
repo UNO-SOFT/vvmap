@@ -4,6 +4,11 @@ and "Dotted Version Vectors: Logical Clocks for Optimistic Replication" (https:/
 */
 package vvmap
 
+import (
+	"bytes"
+	"encoding/gob"
+)
+
 // ID of node. An ID must be unique across all nodes sharing the map.
 type ID string
 
@@ -107,6 +112,7 @@ func (v *Map) Delta(since VersionVector) Delta {
 
 // Merge merges a delta into the map
 func (v *Map) Merge(delta Delta) {
+
 	for _, record := range delta.records {
 
 		if record.Dot.Version < v.version[record.Dot.SourceID] {
@@ -131,4 +137,52 @@ func (v *Map) Merge(delta Delta) {
 			v.version[id] = version
 		}
 	}
+}
+
+// implement gob encode/decode interface
+func (v *Map) GobEncode() ([]byte, error) {
+
+	w := new(bytes.Buffer)
+	encoder := gob.NewEncoder(w)
+
+	gob.Register(map[string]interface{}{})
+	err := encoder.Encode(v.storage)
+	if err != nil {
+		return nil, err
+	}
+	err = encoder.Encode(v.version)
+	if err != nil {
+		return nil, err
+	}
+	err = encoder.Encode(v.me)
+	if err != nil {
+		return nil, err
+	}
+
+	return w.Bytes(), nil
+
+}
+
+// implement gob encode/decode interface
+func (v *Map) GobDecode(buf []byte) error {
+
+	r := bytes.NewBuffer(buf)
+	decoder := gob.NewDecoder(r)
+
+	gob.Register(map[string]interface{}{})
+	err := decoder.Decode(&v.storage)
+	if err != nil {
+		return err
+	}
+	err = decoder.Decode(&v.version)
+	if err != nil {
+		return err
+	}
+	err = decoder.Decode(&v.me)
+	if err != nil {
+		return err
+	}
+
+	return err
+
 }
