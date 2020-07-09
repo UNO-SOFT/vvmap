@@ -1,1 +1,3 @@
-module github.com/hankjacobs/vvmap
+module github.com/nsip/vvmap
+
+go 1.14
